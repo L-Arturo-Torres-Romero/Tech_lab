@@ -1,0 +1,80 @@
+🧁 Cupcake Wonderland — Asistente de WhatsApp para Pedidos de Cupcakes
+📖 Descripción del Proyecto
+Cupcake Wonderland es un sistema backend en Python para la gestión automatizada de pedidos de cupcakes personalizados a través de la API oficial de WhatsApp Cloud de Meta. Transiciona la arquitectura vista en los notebooks de entrenamiento (Hands-On WhatsApp Cloud API, Integración Llama y WhatsApp y Diseño de Agentes Conversacionales) a un proyecto modular, desacoplado y listo para producción.
+
+🎯 ¿Qué resuelve?
+Permite a los clientes de una pastelería interactuar por WhatsApp de forma natural para:
+
+Explorar el menú y catálogo: Bizcochos (Red Velvet, Chocolate Belga, Vainilla Francesa, Zanahoria), rellenos (Nutella, Frutos Rojos, Cajeta), coberturas (Buttercream, Queso Crema, Ganache) y paquetes (cajas de 4, 6, 12, 24 piezas y mini-cupcakes).
+Consultar disponibilidad en cocina: Validación automática de anticipación mínima (24h a 48h) y límite de cupos diarios de horneado.
+Cotizar y registrar pedidos: Asignación automática de folio (ej. CUP-1003), cálculo del total con extras (fotos comestibles, figuras 3D) y guardado en base de datos.
+Consultar el estado del pedido: Ver en qué etapa se encuentra (PENDIENTE_PAGO, CONFIRMADO, EN_PREPARACION, LISTO, ENTREGADO).
+Resolver dudas frecuentes (FAQ): Métodos de pago (SPEI, tarjeta, efectivo), alérgenos, opciones sin gluten, envíos a domicilio y conservación.
+🛡️ Guardrails y Confiabilidad (Arquitectura de los Notebooks)
+Filtros de Seguridad antes del LLM: Respuestas deterministas inmediatas ante alertas de alergias/urgencias médicas e intenciones de escalamiento a un repostero humano.
+Concurrencia Segura: Serialización de mensajes por usuario mediante 
+
+obtener_lock
+ para evitar colisiones de memoria.
+Normalización de Teléfonos: Manejo de números de México con 
+
+normalizar_numero_mx
+ (521 a 52).
+Respuesta Asíncrona (<50ms): Empleo de BackgroundTasks en 
+
+recibir_mensaje
+ para responder con status: ok a Meta al instante y deduplicar mensajes por wamid.
+Motor Híbrido: Compatible con Ollama (Llama 3.1) y respaldado por un motor NLU de reglas semánticas en 
+
+motor_fallback_nlu
+ que permite ejecutar el proyecto inmediatamente sin dependencias externas.
+⚡ Quick Start (Puesta en Marcha en 2 Minutos)
+1. Instalar dependencias
+Desde la raíz del proyecto, ejecuta:
+
+powershell
+pip install -r requirements.txt
+2. Variables de Entorno
+El archivo 
+
+.env
+ ya viene preconfigurado con valores por defecto para desarrollo local. Si vas a conectar Meta WhatsApp Cloud API, edita 
+
+.env
+:
+
+env
+WHATSAPP_ACCESS_TOKEN=tu_access_token_de_meta
+PHONE_NUMBER_ID=tu_phone_number_id_de_meta
+VERIFY_TOKEN=cupcakes_webhook_secret_2026
+3. Ejecutar y Probar
+Tienes 3 formas inmediatas de probar el sistema:
+
+Opción A: Dashboard Web y Simulador Visual (Recomendado)
+Inicia el servidor:
+
+powershell
+python run.py
+Abre en tu navegador:
+
+📱 Panel y Simulador WhatsApp: http://localhost:8000/ (incluye vista previa de celular, botones rápidos y tabla de pedidos en vivo).
+📖 Documentación Swagger: http://localhost:8000/docs.
+Opción B: Simulador en Terminal (CLI interactivo)
+Si prefieres interactuar directamente desde tu consola de comandos:
+
+powershell
+python simulator.py
+Comandos disponibles en el chat: /menu, /pedidos, /limpiar y /salir.
+
+Opción C: Conectar a WhatsApp Real (vía ngrok)
+Para conectar tu número de pruebas de Meta con tu servidor local:
+
+powershell
+python run.py --ngrok
+Copia la Callback URL que imprimirá en consola (ej. https://xxxx.ngrok-free.app/webhook) y configúrala en el panel de Meta for Developers > WhatsApp > Webhooks con el token cupcakes_webhook_secret_2026.
+
+4. Ejecutar las Pruebas Automatizadas
+Verifica que todos los módulos y endpoints funcionen correctamente:
+
+powershell
+python -m pytest tests/ -v

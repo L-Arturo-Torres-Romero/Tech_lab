@@ -1,0 +1,92 @@
+📦 Estructura del Proyecto 
+text
+HackathonWhatsApp/
+├── .env                       # Variables de entorno locales configuradas
+├── .env.example               # Plantilla de variables de entorno para despliegue
+├── .gitignore                 # Exclusiones de Git (db, venv, cache)
+├── requirements.txt           # Dependencias del proyecto
+├── README.md                  # Documentación completa y guía paso a paso
+├── run.py                     # Punto de entrada del servidor (con opción --ngrok)
+├── simulator.py               # Simulador interactivo en consola para pruebas rápidas
+│
+├── src/
+│   ├── app.py                 # Aplicación FastAPI, middlewares CORS y lifespan
+│   ├── config.py              # Validación de configuración y credenciales
+│   ├── database.py            # SQLite con modo WAL y control de concurrencia
+│   │
+│   ├── models/
+│   │   ├── order.py           # Esquemas Pydantic de pedidos (OrderStatus, OrderCreate, etc.)
+│   │   └── whatsapp.py        # Modelos de deserialización de Webhooks y simulación
+│   │
+│   ├── services/
+│   │   ├── catalog_service.py # Menú (masas, rellenos, coberturas), precios y FAQ
+│   │   ├── order_service.py   # Creación, consulta, cupos de fecha y estados de pedidos
+│   │   ├── whatsapp_service.py# Envío de mensajes a Meta Graph API y normalización MX
+│   │   ├── llm_service.py     # Integración Ollama (Llama 3.1) con Fallback NLU
+│   │   └── agent_service.py   # Orquestador con guardrails, memoria por chat y locks
+│   │
+│   └── api/
+│       ├── routes_webhook.py  # Endpoints oficiales de Meta (GET/POST /webhook)
+│       ├── routes_orders.py   # API REST para pedidos y catálogo
+│       └── routes_simulator.py# Endpoints para pruebas y simulación directa
+│
+├── static/                    # Panel Web y Simulador Visual de WhatsApp
+│   ├── index.html             # Mockup interactivo de teléfono celular y tarjetas de pedidos
+│   ├── style.css              # Diseño pastel/dark moderno
+│   └── app.js                 # Lógica interactiva en tiempo real
+│
+└── tests/                     # 25 pruebas unitarias e integrales (100% pasando)
+    ├── test_normalization.py  # Normalización de números (+521, +52, 10 dígitos)
+    ├── test_catalog.py        # Catálogo, precios por paquete y FAQ
+    ├── test_orders.py         # Persistencia en SQLite, cupos y estados
+    ├── test_agent.py          # Guardrails de urgencia/alergia, escalamiento y flujo
+    └── test_webhook.py        # Verificación y recepción de eventos del webhook
+🧁 Lógica de Negocio y Reglas Implementadas
+Catálogo Especializado de Cupcakes:
+
+Bizcochos: Vainilla Francesa, Chocolate Belga, Red Velvet, Zanahoria & Nuez, Limón & Amapola, Café Moka.
+Rellenos: Nutella, Dulce de Leche / Cajeta artesanal, Compota de Frutos Rojos, Crema Pastelera, Chocolate Blanco.
+Coberturas: Buttercream Suizo, Frosting de Queso Crema, Ganache de Chocolate, Merengue Italiano Tostado.
+Paquetes & Precios: Cajas de 4 ($160 MXN), 6 ($230 MXN), 12 ($420 MXN), 24 ($790 MXN) y 24 Mini Cupcakes ($380 MXN).
+Personalización: Dedicatorias en fondant, oblea con foto o logo comestible (+ $40/caja), figuras 3D (+ $30/pieza).
+Guardrails Deterministas (Reglas Fijas antes del LLM):
+
+Alergias / Urgencias: Detección de alergia, intoxicación, urgente o hospital. Emite un aviso inmediato de seguridad alimentaria con la línea de emergencia directa.
+Escalamiento Humano: Detección de hablar con alguien, asesor o humano. Canaliza al cliente con el equipo de reposteros en tienda.
+Saludo Inicial: Saludo de bienvenida presentando a la pastelería.
+Function Calling & Persistencia:
+
+consultar_catalogo: Expone sabores y precios.
+consultar_disponibilidad: Valida que haya al menos 24 a 48 horas de anticipación y que no se supere el cupo máximo diario de producción en 
+
+src/services/order_service.py
+.
+crear_pedido: Asigna un código único secuencial (ej. CUP-1003), calcula el precio total con extras y guarda en SQLite en modo WAL.
+consultar_pedido: Informa el estado en cocina (PENDIENTE_PAGO, CONFIRMADO, EN_PREPARACION, LISTO, ENTREGADO).
+buscar_pregunta_frecuente: Responde dudas sobre anticipación, métodos de pago (SPEI / tarjeta / efectivo), zonas de envío y conservación.
+Integración con Meta WhatsApp Cloud API:
+
+Deduplicación (wamid): Previene responder dos veces si Meta reintenta la entrega.
+Respuesta Ultrarrápida (BackgroundTasks): Devuelve {"status": "ok"} a Meta en menos de 50 ms.
+Normalización de Teléfonos (normalizar_numero_mx): Convierte el prefijo 521 de México a 52 para el envío por la API Graph.
+Concurrencia (threading.Lock por número): Evita condiciones de carrera si el usuario envía múltiples mensajes seguidos.
+🚀 Cómo Ejecutar el Proyecto
+1. Iniciar el Servidor Web y Panel de Control
+bash
+python run.py
+Panel Web & Simulador Visual: http://localhost:8000/
+Documentación Interactiva Swagger: http://localhost:8000/docs
+URL del Webhook: http://localhost:8000/webhook
+2. Probar con WhatsApp Real (Túnel ngrok)
+bash
+python run.py --ngrok
+Imprimirá en consola la Callback URL pública (ej. https://xxxx.ngrok-free.app/webhook) y el token (cupcakes_webhook_secret_2026) para configurarlos en el portal de Meta for Developers.
+
+3. Chatear en Consola (Simulador CLI)
+bash
+python simulator.py
+Permite conversar interactivamente con el bot, usar comandos como /menu, /pedidos, /limpiar y /salir.
+
+4. Correr las Pruebas Unitarias
+bash
+python -m pytest tests/ -v

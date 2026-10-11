@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cupcake Wonderland | Panel de Control & WhatsApp Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">🧁</div>
+                <div class="brand-info">
+                    <h2>Cupcake Wonderland</h2>
+                    <span class="badge online">Bot Activo</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="simulator" id="tab-btn-simulator">
+                    <span class="icon">💬</span>
+                    <span>Simulador WhatsApp</span>
+                </button>
+                <button class="nav-item" data-tab="orders" id="tab-btn-orders">
+                    <span class="icon">📦</span>
+                    <span>Gestión de Pedidos</span>
+                    <span class="counter" id="order-count">2</span>
+                </button>
+                <button class="nav-item" data-tab="catalog" id="tab-btn-catalog">
+                    <span class="icon">📖</span>
+                    <span>Menú & Catálogo</span>
+                </button>
+                <button class="nav-item" data-tab="logs" id="tab-btn-logs">
+                    <span class="icon">📋</span>
+                    <span>Bitácora & Webhook</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="api-status" id="webhook-status-badge">
+                    <span class="dot"></span>
+                    <span id="webhook-status-text">Webhook: /webhook</span>
+                </div>
+                <a href="/docs" target="_blank" class="docs-link">📖 Documentación Swagger</a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- TAB 1: SIMULADOR WHATSAPP -->
+            <section id="tab-simulator" class="tab-pane active">
+                <div class="pane-header">
+                    <div>
+                        <h1>Simulador de WhatsApp</h1>
+                        <p>Interactúa con el asistente inteligente tal como lo haría un cliente por WhatsApp.</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-secondary" id="btn-reset-chat">🔄 Reiniciar Memoria</button>
+                    </div>
+                </div>
+
+                <div class="simulator-wrapper">
+                    <!-- Phone Frame -->
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="chat-header">
+                            <div class="chat-avatar">🧁</div>
+                            <div class="chat-info">
+                                <h3>Cupcake Wonderland ✨</h3>
+                                <span>cuenta de empresa verificada</span>
+                            </div>
+                        </div>
+
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="message bot">
+                                <div class="bubble">
+                                    ¡Hola! Bienvenido a <b>Cupcake Wonderland</b> 🧁✨. ¿En qué podemos endulzar tu día hoy? Puedes preguntarme por nuestro catálogo de sabores, cotizar un pedido para tu evento o consultar un pedido existente.
+                                </div>
+                                <span class="time">10:00 AM</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick suggestion chips -->
+                        <div class="quick-chips">
+                            <button class="chip" data-msg="Hola, quiero ver el menú">📖 Ver menú</button>
+                            <button class="chip" data-msg="¿Tienen cupo para mañana?">📅 Disponibilidad</button>
+                            <button class="chip" data-msg="Quiero pedir 12 cupcakes de Red Velvet para el sábado">🧁 Pedir 12 Red Velvet</button>
+                            <button class="chip" data-msg="¿Dónde va mi pedido CUP-1001?">🔍 Estatus CUP-1001</button>
+                            <button class="chip" data-msg="Soy alérgico a las nueces, ¿tienen opciones seguras?">⚠️ Alergias</button>
+                            <button class="chip" data-msg="Quiero hablar con una persona">👩‍🍳 Hablar con humano</button>
+                        </div>
+
+                        <form class="chat-input-bar" id="chat-form">
+                            <input type="text" id="chat-input" placeholder="Escribe un mensaje de WhatsApp..." autocomplete="off">
+                            <button type="submit" id="btn-send-message">
+                                <span>Enviar</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Simulator Debug Sidebar -->
+                    <div class="debug-panel">
+                        <h3>Configuración de Simulación</h3>
+                        <div class="form-group">
+                            <label for="sim-phone">Número de Teléfono Simulado:</label>
+                            <input type="text" id="sim-phone" value="525512345678" class="form-control">
+                            <small>Formato México: 52 + 10 dígitos</small>
+                        </div>
+
+                        <div class="info-card">
+                            <h4>🧠 Cómo funciona el Agente</h4>
+                            <ul>
+                                <li><b>1. Guardrails:</b> Filtra emergencias, alergias y escalamiento humano antes del LLM.</li>
+                                <li><b>2. Memoria:</b> Recuerda los turnos previos de la conversación por número.</li>
+                                <li><b>3. Function Calling:</b> Consulta catálogo, disponibilidad y guarda pedidos en SQLite.</li>
+                                <li><b>4. Resiliencia:</b> Si Ollama no está activo, el motor NLU responde de inmediato.</li>
+                            </ul>
+                        </div>
+
+                        <div class="info-card">
+                            <h4>⚡ Última Ejecución</h4>
+                            <div id="last-exec-info">Sin ejecuciones recientes.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: GESTIÓN DE PEDIDOS -->
+            <section id="tab-orders" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Gestión de Pedidos de Cupcakes</h1>
+                        <p>Visualiza y administra todos los pedidos personalizados captados por WhatsApp.</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" id="btn-refresh-orders">🔄 Actualizar</button>
+                    </div>
+                </div>
+
+                <div class="filters-bar">
+                    <button class="filter-btn active" data-filter="ALL">Todos</button>
+                    <button class="filter-btn" data-filter="PENDIENTE_PAGO">Pendiente Pago</button>
+                    <button class="filter-btn" data-filter="CONFIRMADO">Confirmados</button>
+                    <button class="filter-btn" data-filter="EN_PREPARACION">En Preparación</button>
+                    <button class="filter-btn" data-filter="LISTO">Listos</button>
+                    <button class="filter-btn" data-filter="ENTREGADO">Entregados</button>
+                </div>
+
+                <div class="orders-grid" id="orders-container">
+                    <!-- Cards se renderizan dinámicamente con JavaScript -->
+                </div>
+            </section>
+
+            <!-- TAB 3: CATÁLOGO Y PRECIOS -->
+            <section id="tab-catalog" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Menú Oficial de Cupcakes</h1>
+                        <p>Sabores, rellenos, coberturas y paquetes configurados en el asistente.</p>
+                    </div>
+                </div>
+
+                <div class="catalog-sections">
+                    <div class="catalog-block">
+                        <h2>🍰 Sabores de Bizcocho</h2>
+                        <div class="catalog-grid" id="catalog-sabores"></div>
+                    </div>
+
+                    <div class="catalog-block">
+                        <h2>🍓 Rellenos Gourmet</h2>
+                        <div class="catalog-grid" id="catalog-rellenos"></div>
+                    </div>
+
+                    <div class="catalog-block">
+                        <h2>🍦 Coberturas & Frostings</h2>
+                        <div class="catalog-grid" id="catalog-coberturas"></div>
+                    </div>
+
+                    <div class="catalog-block">
+                        <h2>📦 Paquetes y Precios</h2>
+                        <div class="catalog-grid" id="catalog-paquetes"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: BITÁCORA Y WEBHOOK -->
+            <section id="tab-logs" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Bitácora de Mensajes & Webhook</h1>
+                        <p>Registro de mensajes entrantes y salientes guardados en SQLite.</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-secondary" id="btn-refresh-logs">🔄 Refrescar Logs</button>
+                    </div>
+                </div>
+
+                <div class="logs-container">
+                    <table class="logs-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha/Hora</th>
+                                <th>Dirección</th>
+                                <th>Teléfono</th>
+                                <th>Mensaje</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-tbody">
+                            <!-- Se llena por JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
